@@ -13,7 +13,7 @@ fn main() -> Result<()> {
         match arg.parse::<u8>() {
             Ok(day) => {
                 if day <= 25 {
-                    //Curl - Input fetcher
+                    //Curl - Input fetching
                     execute(
                         "curl",
                         &[
