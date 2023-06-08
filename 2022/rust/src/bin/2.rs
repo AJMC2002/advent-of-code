@@ -4,6 +4,7 @@ fn main() -> Result<()> {
     let input = fs::read_to_string("tmp/2.in")?;
 
     println!("PART 1: {}", part_1(&input)?);
+    println!("PART 2: {}", part_2(&input)?);
 
     Ok(())
 }
@@ -35,7 +36,34 @@ fn part_1(input: &str) -> Result<u32> {
     Ok(total_score)
 }
 
-#[derive(PartialEq, Eq)]
+fn part_2(input: &str) -> Result<u32> {
+    let mut total_score = 0_u32;
+    let mut opponent = String::new();
+    let mut result = String::new();
+    let mut is_prev_space = false;
+    for c in input.chars() {
+        if c == '\n' {
+            continue;
+        }
+        if c == ' ' {
+            is_prev_space = true;
+            continue;
+        }
+        match is_prev_space {
+            true => {
+                result.push(c);
+                total_score += Hand::new(&opponent)?.play_by_result(&Outcome::new(&result)?);
+                result.pop();
+                opponent.pop();
+                is_prev_space = false;
+            }
+            false => opponent.push(c),
+        }
+    }
+    Ok(total_score)
+}
+
+#[derive(Copy, Clone, PartialEq)]
 enum Hand {
     Rock,
     Paper,
@@ -48,7 +76,7 @@ impl Hand {
             "A" | "X" => Ok(Self::Rock),
             "B" | "Y" => Ok(Self::Paper),
             "C" | "Z" => Ok(Self::Scissors),
-            _ => panic!("Sexo"),
+            _ => panic!("Not a valid character"),
         }
     }
 
@@ -57,6 +85,14 @@ impl Hand {
             Self::Rock => Self::Scissors,
             Self::Paper => Self::Rock,
             Self::Scissors => Self::Paper,
+        }
+    }
+
+    fn beaten_by(&self) -> Self {
+        match self {
+            Self::Scissors => Self::Rock,
+            Self::Rock => Self::Paper,
+            Self::Paper => Self::Scissors,
         }
     }
 
@@ -69,12 +105,32 @@ impl Hand {
         };
         self.points() + outcome.points()
     }
+
+    fn play_by_result(&self, result: &Outcome) -> u32 {
+        let hand = match result {
+            Outcome::Win => self.beaten_by(),
+            Outcome::Draw => *self,
+            Outcome::Lose => self.beats(),
+        };
+        return hand.points() + result.points();
+    }
 }
 
 enum Outcome {
     Win,
     Draw,
     Lose,
+}
+
+impl Outcome {
+    fn new(c: &str) -> Result<Self> {
+        match c {
+            "X" => Ok(Self::Lose),
+            "Y" => Ok(Self::Draw),
+            "Z" => Ok(Self::Win),
+            _ => panic!("Not a valid character"),
+        }
+    }
 }
 
 trait Points {
